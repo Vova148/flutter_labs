@@ -144,12 +144,17 @@
 // }
 
 import 'package:flutter/material.dart';
+import 'package:lab1sample2/global.dart';
 import 'package:lab1sample2/home.dart';
 import 'package:lab1sample2/login.dart';
 import 'package:lab1sample2/prof.dart';
 import 'package:lab1sample2/reg.dart';
+import 'package:lab1sample2/storage/secure_user_storage.dart';
 
-void main() {
+import 'models/user.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(MyApp());
 }
 
@@ -182,7 +187,7 @@ class MyHomePage extends StatelessWidget {
         title: Text('Про нас', style: TextStyle(color: Colors.blue)),
         backgroundColor: Colors.grey[200],
       ),
-      body: Center(
+      body: const Center(
         child: Text(
           'Барбершоп',
           style: TextStyle(
@@ -207,6 +212,20 @@ class DrawerMain extends StatefulWidget {
 }
 
 class DrawerMainState extends State<DrawerMain> {
+  // Додаємо змінну для збереження стану авторизації
+  bool _isAuthenticated = false;
+
+  // Метод для перевірки авторизації користувача
+  void checkAuthentication() async {
+    _isAuthenticated = authManager.isUserAuthenticated();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    checkAuthentication(); // Перевірка при ініціалізації стану
+  }
+
   @override
   Widget build(BuildContext context) {
     return Drawer(
@@ -214,7 +233,10 @@ class DrawerMainState extends State<DrawerMain> {
         padding: EdgeInsets.zero,
         children: <Widget>[
           DrawerHeader(
-            child: Text(
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+            ),
+            child: const Text(
               'Барбершоп',
               style: TextStyle(
                 color: Colors.blue,
@@ -222,32 +244,29 @@ class DrawerMainState extends State<DrawerMain> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            decoration: BoxDecoration(
-              color: Colors.grey[200],
-            ),
           ),
           ListTile(
             selected: widget.selected == 'about',
-            leading: Icon(Icons.info, color: Colors.blue),
-            title: Text('Про нас', style: TextStyle(color: Colors.blue)),
+            leading: const Icon(Icons.info, color: Colors.blue),
+            title: const Text('Про нас', style: TextStyle(color: Colors.blue)),
             onTap: () {
               Navigator.pop(context);
               Navigator.pushNamed(context, '/');
             },
           ),
-          ListTile(
+          if (!_isAuthenticated) ListTile(
             selected: widget.selected == 'registration',
-            leading: Icon(Icons.person_add, color: Colors.blue),
-            title: Text('Реєстрація', style: TextStyle(color: Colors.blue)),
+            leading: const Icon(Icons.person_add, color: Colors.blue),
+            title: const Text('Реєстрація', style: TextStyle(color: Colors.blue)),
             onTap: () {
               Navigator.pop(context);
               Navigator.pushNamed(context, '/registration');
             },
           ),
-          ListTile(
+          if (_isAuthenticated) ListTile(
             selected: widget.selected == 'profile',
-            leading: Icon(Icons.account_circle, color: Colors.blue),
-            title: Text('Профіль', style: TextStyle(color: Colors.blue)),
+            leading: const Icon(Icons.account_circle, color: Colors.blue),
+            title: const Text('Профіль', style: TextStyle(color: Colors.blue)),
             onTap: () {
               Navigator.pop(context);
               Navigator.pushNamed(context, '/profile');
@@ -255,17 +274,17 @@ class DrawerMainState extends State<DrawerMain> {
           ),
           ListTile(
             selected: widget.selected == 'home',
-            leading: Icon(Icons.home, color: Colors.blue),
-            title: Text('Домашня сторінка', style: TextStyle(color: Colors.blue)),
+            leading: const Icon(Icons.home, color: Colors.blue),
+            title: const Text('Домашня сторінка', style: TextStyle(color: Colors.blue)),
             onTap: () {
               Navigator.pop(context);
               Navigator.pushNamed(context, '/home');
             },
           ),
-          ListTile(
+          if (!_isAuthenticated) ListTile(
             selected: widget.selected == 'login',
-            leading: Icon(Icons.login, color: Colors.blue),
-            title: Text('Увійти', style: TextStyle(color: Colors.blue)),
+            leading: const Icon(Icons.login, color: Colors.blue),
+            title: const Text('Увійти', style: TextStyle(color: Colors.blue)),
             onTap: () {
               Navigator.pop(context);
               Navigator.pushNamed(context, '/login');

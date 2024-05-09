@@ -1,12 +1,35 @@
 import 'package:flutter/material.dart';
 
-class Prof extends StatelessWidget {
+import 'global.dart';
+
+class Prof extends StatefulWidget {
+  const Prof({super.key});
+
+  @override
+  _ProfState createState() => _ProfState();
+}
+
+class _ProfState extends State<Prof> {
+  String _userName = '';
+  String _userEmail = '';
+
+  @override
+  void initState() {
+    super.initState();
+    // Завантаження даних користувача при ініціалізації
+    final user = authManager.currentUser;
+    if (user != null) {
+      _userName = user.firstName;
+      _userEmail = user.email;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.blue[50], // Фон сторінки
       appBar: AppBar(
-        title: Text(
+        title: const Text(
           'Profile', // Текст заголовку
           style: TextStyle(
             color: Colors.blue,
@@ -32,51 +55,51 @@ class Prof extends StatelessWidget {
                     color: Colors.black.withOpacity(0.1),
                     spreadRadius: 2,
                     blurRadius: 5,
-                    offset: Offset(0, 3),
+                    offset: const Offset(0, 3),
                   ),
                 ],
               ),
-              child: Center(
+              child: const Center(
                 child: Icon(
                   Icons.person,
-                  size: 80,
                   color: Colors.blue,
+                  size: 80,
                 ),
               ),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             Text(
-              'John Doe', // Ім'я користувача
-              style: TextStyle(
+              _userName, // Ім'я користувача
+              style: const TextStyle(
                 color: Colors.blue,
                 fontSize: 24.0,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             Text(
-              'john.doe@example.com', // Email користувача
-              style: TextStyle(
+              _userEmail, // Email користувача
+              style: const TextStyle(
                 color: Colors.blue,
                 fontSize: 18.0,
               ),
             ),
-            SizedBox(height: 40),
+            const SizedBox(height: 40),
             ElevatedButton(
               onPressed: () {
-                // Функціональність кнопки "Edit Profile"
+                // Додати функціональність кнопки "Edit Profile"
               },
-              child: Text(
-                'Edit Profile',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10.0),
+                ),
+              ),
+              child: const Text(
+                'Edit Profile',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),
