@@ -1,19 +1,107 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'global.dart';
+import 'models/service.dart';
 
 class Home extends StatefulWidget {
+  const Home({super.key});
+
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<Home> {
-  List<String> tasks = [];
+  List<Map<String, dynamic>> services = [
+    {'label': 'Haircuts', 'value': false},
+    {'label': 'Shaving', 'value': false},
+    {'label': 'Beard trimming', 'value': false},
+    {'label': 'Styling', 'value': false},
+  ];
+
+  DateTime? appointmentDate;
+
+  void updateServiceSelection(int index, bool? newValue) {
+    setState(() {
+      services[index]['value'] = newValue ?? false;
+    });
+  }
+
+  Future<void> pickDate(BuildContext context) async {
+    final DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime(DateTime.now().year + 1),
+    );
+
+    if (pickedDate != null && pickedDate != appointmentDate) {
+      setState(() {
+        appointmentDate = pickedDate;
+      });
+    }
+  }
+
+  void bookAppointment() {
+    if (appointmentDate == null || services.every((s) => !s['value'])) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select services and a date.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final List<String> bookedServices = services
+        .where((service) => service['value'] == true)
+        .map((service) => service['label'].toString())
+        .toList();
+
+    final ServiceBarb newService = ServiceBarb(
+      userEmail: authManager.currentUser?.email ?? '',
+      services: bookedServices,
+      appointmentDate: appointmentDate!,
+    );
+
+    setState(() {
+      authManager.currentUser?.selectedServices.add(newService);
+      storage.saveUser(authManager.currentUser!);
+      appointmentDate = null;
+      for (var service in services) {
+        service['value'] = false;
+      }
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Appointment booked successfully!'),
+        backgroundColor: Colors.green,
+      ),
+    );
+  }
+
+  void deleteAppointment(int index) {
+    setState(() {
+      authManager.currentUser?.selectedServices.removeAt(index);
+      storage.saveUser(authManager.currentUser!);
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Appointment deleted successfully!'),
+        backgroundColor: Colors.green,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final userServices = authManager.currentUser?.selectedServices ?? [];
+
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        title: Text(
+        title: const Text(
           'Barbershop',
           style: TextStyle(
             color: Colors.blue,
@@ -31,83 +119,53 @@ class _HomeScreenState extends State<Home> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Welcome to our Barbershop!',
-                style: TextStyle(
-                  color: Colors.blue,
-                  fontSize: 24.0,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              SizedBox(height: 20),
-              // Додано інформацію про послуги
-              Text(
-                'Services:',
+              const Text(
+                'Select Services:',
                 style: TextStyle(
                   color: Colors.blue,
                   fontSize: 20.0,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              Text(
-                '- Haircuts\n- Shaving\n- Beard trimming\n- Styling',
-                style: TextStyle(
-                  color: Colors.blue,
-                  fontSize: 16.0,
+              for (int i = 0; i < services.length; i++)
+                CheckboxListTile(
+                  title: Text(services[i]['label']),
+                  value: services[i]['value'],
+                  onChanged: (newValue) => updateServiceSelection(i, newValue),
+                  activeColor: Colors.blue,
                 ),
-              ),
-              SizedBox(height: 20),
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(10.0),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.5),
-                      spreadRadius: 2,
-                      blurRadius: 5,
-                      offset: Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                  child: TextField(
-                    decoration: InputDecoration(
-                      hintText: 'Enter Appointment',
-                      border: InputBorder.none,
-                      suffixIcon: Icon(Icons.event_note, color: Colors.blue),
-                    ),
-                    style: TextStyle(
-                      color: Colors.blue,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    onSubmitted: (value) {
-                      setState(() {
-                        tasks.add(value);
-                      });
-                    },
-                  ),
-                ),
-              ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               ElevatedButton(
-                onPressed: () {
-                  // Add functionality to schedule appointment here
-                },
-                child: Text(
-                  'Book Appointment', // змінено текст кнопки
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                ),
+                onPressed: () => pickDate(context),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10.0),
                   ),
                 ),
+                child: Text(
+                  appointmentDate == null
+                      ? 'Pick Appointment Date'
+                      : DateFormat('dd-MM-yyyy').format(appointmentDate!),
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                ),
               ),
-              SizedBox(height: 20),
-              Text(
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: bookAppointment,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10.0),
+                  ),
+                ),
+                child: const Text(
+                  'Book Appointment',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
                 'Appointments:',
                 style: TextStyle(
                   color: Colors.blue,
@@ -115,20 +173,25 @@ class _HomeScreenState extends State<Home> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               Expanded(
                 child: ListView.builder(
-                  itemCount: tasks.length,
+                  itemCount: userServices.length,
                   itemBuilder: (context, index) {
+                    final service = userServices[index];
                     return Card(
                       elevation: 3,
                       child: ListTile(
                         title: Text(
-                          tasks[index],
-                          style: TextStyle(
+                          '${DateFormat('dd-MM-yyyy').format(service.appointmentDate)}: ${service.services.join(', ')}',
+                          style: const TextStyle(
                             color: Colors.blue,
                             fontWeight: FontWeight.bold,
                           ),
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () => deleteAppointment(index),
                         ),
                       ),
                     );
