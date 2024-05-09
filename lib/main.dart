@@ -1,148 +1,3 @@
-// import 'package:flutter/material.dart';
-
-// void main() {
-//   runApp(const MyApp());
-// }
-
-// class MyApp extends StatelessWidget {
-//   const MyApp({super.key});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return MaterialApp(
-//       title: 'Magical Counter',
-//       theme: ThemeData(
-//         primarySwatch: Colors.indigo,
-//         hintColor: Colors.pinkAccent,
-//         fontFamily: 'Merienda',
-//         appBarTheme: AppBarTheme(
-//           backgroundColor: Colors.indigo,
-//         ),
-//       ),
-//       home: const MyHomePage(title: 'Magical Counter'),
-//     );
-//   }
-// }
-
-// class MyHomePage extends StatefulWidget {
-//   const MyHomePage({super.key, required this.title});
-
-//   final String title;
-
-//   @override
-//   State<MyHomePage> createState() => _MyHomePageState();
-// }
-
-// class _MyHomePageState extends State<MyHomePage> {
-//   int _counter = 0;
-//   TextEditingController _textEditingController = TextEditingController();
-
-//   void _incrementCounter() {
-//     setState(() {
-//       _counter++;
-//     });
-//   }
-
-//   void _resetCounter() {
-//     setState(() {
-//       _counter = 0;
-//     });
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: Text(
-//           widget.title,
-//           style: TextStyle(
-//             fontFamily: 'Pacifico',
-//             fontSize: 28,
-//             color: Colors.white,
-//           ),
-//         ),
-//         centerTitle: true,
-//         actions: [
-//           IconButton(
-//             icon: Icon(Icons.info),
-//             onPressed: () {
-//               // Add your info action here
-//             },
-//           ),
-//         ],
-//       ),
-//       body: Container(
-//         decoration: BoxDecoration(
-//           gradient: LinearGradient(
-//             begin: Alignment.topCenter,
-//             end: Alignment.bottomCenter,
-//             colors: [Colors.indigo, Colors.deepPurple],
-//           ),
-//         ),
-//         child: Center(
-//           child: Column(
-//             mainAxisAlignment: MainAxisAlignment.center,
-//             children: <Widget>[
-//               CircleAvatar(
-//                 backgroundColor: Colors.white,
-//                 radius: 70,
-//                 child: Icon(
-//                   Icons.star,
-//                   color: Colors.yellow,
-//                   size: 80,
-//                 ),
-//               ),
-//               SizedBox(height: 20),
-//               Text(
-//                 'Wondrous Counter',
-//                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
-//               ),
-//               SizedBox(height: 20),
-//               Text(
-//                 '$_counter',
-//                 style: TextStyle(
-//                   fontSize: 64,
-//                   fontWeight: FontWeight.bold,
-//                   color: Colors.yellow,
-//                 ),
-//               ),
-//               SizedBox(height: 20),
-//               Padding(
-//                 padding: const EdgeInsets.symmetric(horizontal: 20),
-//                 child: TextField(
-//                   controller: _textEditingController,
-//                   decoration: InputDecoration(
-//                     labelText: 'Magical Incantation',
-//                     labelStyle: TextStyle(color: Colors.white),
-//                     border: OutlineInputBorder(),
-//                     focusedBorder: OutlineInputBorder(
-//                       borderSide: BorderSide(color: Colors.pinkAccent),
-//                     ),
-//                   ),
-//                   style: TextStyle(color: Colors.white),
-//                 ),
-//               ),
-//             ],
-//           ),
-//         ),
-//       ),
-//       floatingActionButton: FloatingActionButton(
-//         onPressed: () {
-//           String enteredText = _textEditingController.text.trim();
-//           if (enteredText.toLowerCase() == "avada kedavra") {
-//             _resetCounter();
-//           } else {
-//             _incrementCounter();
-//           }
-//         },
-//         tooltip: 'Cast Spell',
-//         child: const Icon(Icons.add),
-//         backgroundColor: Colors.pinkAccent,
-//       ),
-//     );
-//   }
-// }
-
 import 'package:flutter/material.dart';
 import 'package:lab1sample2/global.dart';
 import 'package:lab1sample2/home.dart';
@@ -151,40 +6,50 @@ import 'package:lab1sample2/prof.dart';
 import 'package:lab1sample2/reg.dart';
 import 'package:lab1sample2/storage/secure_user_storage.dart';
 
+import 'internet_status_banner.dart';
 import 'models/user.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(MyApp());
+  User? curUser = await storage.getCurrentUser();
+  if (curUser != null) {
+    authManager.login(curUser.email, curUser.password);
+  }
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Барбершоп',
-      theme: ThemeData(
-        primaryColor: Colors.blue,
-      ),
-      initialRoute: '/', // Початковий маршрут
-      routes: {
-        '/': (context) => MyHomePage(),
-        '/registration': (context) => Reg(),
-        '/profile': (context) => Prof(),
-        '/home': (context) => Home(),
-        '/login': (context) => Login(),
-      },
+    return
+      MaterialApp(
+        title: 'Барбершоп',
+        theme: ThemeData(
+          primaryColor: Colors.blue,
+        ),
+        initialRoute: '/',
+        routes: {
+          '/': (context) => const MyHomePage(),
+          '/registration': (context) => Reg(),
+          '/profile': (context) => const Prof(),
+          '/home': (context) => const Home(),
+          '/login': (context) => const Login(),
+        }
     );
   }
 }
-
 class MyHomePage extends StatelessWidget {
+  const MyHomePage({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return NetworkAwareWidget(
+        child: Scaffold(
       backgroundColor: Colors.grey[200],
       appBar: AppBar(
-        title: Text('Про нас', style: TextStyle(color: Colors.blue)),
+        title: const Text('Про нас', style: TextStyle(color: Colors.blue)),
         backgroundColor: Colors.grey[200],
       ),
       body: const Center(
@@ -198,32 +63,65 @@ class MyHomePage extends StatelessWidget {
         ),
       ),
       drawer: DrawerMain(selected: 'about'),
-    );
+    ));
   }
 }
 
 class DrawerMain extends StatefulWidget {
-  DrawerMain({Key? key, required this.selected}) : super(key: key);
-
   final String selected;
+
+  const DrawerMain({super.key, required this.selected});
 
   @override
   DrawerMainState createState() => DrawerMainState();
 }
 
 class DrawerMainState extends State<DrawerMain> {
-  // Додаємо змінну для збереження стану авторизації
   bool _isAuthenticated = false;
 
-  // Метод для перевірки авторизації користувача
-  void checkAuthentication() async {
+  void checkAuthentication() {
     _isAuthenticated = authManager.isUserAuthenticated();
   }
 
   @override
   void initState() {
     super.initState();
-    checkAuthentication(); // Перевірка при ініціалізації стану
+    checkAuthentication();
+  }
+
+  Future<void> _showLogoutDialog(BuildContext context) async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Підтвердження виходу'),
+          content: const SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text('Ви впевнені, що хочете вийти з облікового запису?'),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Скасувати'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Вийти'),
+              onPressed: () {
+                authManager.logout();
+                Navigator.of(context).pop();
+                Navigator.pushReplacementNamed(context, '/');
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -254,24 +152,26 @@ class DrawerMainState extends State<DrawerMain> {
               Navigator.pushNamed(context, '/');
             },
           ),
-          if (!_isAuthenticated) ListTile(
-            selected: widget.selected == 'registration',
-            leading: const Icon(Icons.person_add, color: Colors.blue),
-            title: const Text('Реєстрація', style: TextStyle(color: Colors.blue)),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, '/registration');
-            },
-          ),
-          if (_isAuthenticated) ListTile(
-            selected: widget.selected == 'profile',
-            leading: const Icon(Icons.account_circle, color: Colors.blue),
-            title: const Text('Профіль', style: TextStyle(color: Colors.blue)),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, '/profile');
-            },
-          ),
+          if (!_isAuthenticated)
+            ListTile(
+              selected: widget.selected == 'registration',
+              leading: const Icon(Icons.person_add, color: Colors.blue),
+              title: const Text('Реєстрація', style: TextStyle(color: Colors.blue)),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, '/registration');
+              },
+            ),
+          if (_isAuthenticated)
+            ListTile(
+              selected: widget.selected == 'profile',
+              leading: const Icon(Icons.account_circle, color: Colors.blue),
+              title: const Text('Профіль', style: TextStyle(color: Colors.blue)),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, '/profile');
+              },
+            ),
           ListTile(
             selected: widget.selected == 'home',
             leading: const Icon(Icons.home, color: Colors.blue),
@@ -281,15 +181,24 @@ class DrawerMainState extends State<DrawerMain> {
               Navigator.pushNamed(context, '/home');
             },
           ),
-          if (!_isAuthenticated) ListTile(
-            selected: widget.selected == 'login',
-            leading: const Icon(Icons.login, color: Colors.blue),
-            title: const Text('Увійти', style: TextStyle(color: Colors.blue)),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, '/login');
-            },
-          ),
+          if (!_isAuthenticated)
+            ListTile(
+              selected: widget.selected == 'login',
+              leading: const Icon(Icons.login, color: Colors.blue),
+              title: const Text('Увійти', style: TextStyle(color: Colors.blue)),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, '/login');
+              },
+            ),
+          if (_isAuthenticated)
+            ListTile(
+              leading: const Icon(Icons.logout, color: Colors.blue),
+              title: const Text('Вийти', style: TextStyle(color: Colors.blue)),
+              onTap: () async {
+                await _showLogoutDialog(context);
+              },
+            ),
         ],
       ),
     );

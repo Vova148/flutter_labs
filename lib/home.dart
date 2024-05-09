@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:lab1sample2/utils.dart';
 import 'global.dart';
+import 'internet_status_banner.dart';
 import 'models/service.dart';
 
 class Home extends StatefulWidget {
@@ -41,7 +43,16 @@ class _HomeScreenState extends State<Home> {
     }
   }
 
-  void bookAppointment() {
+  Future<void> bookAppointment()async {
+    if (!await checkInternetConnection()) {
+    ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+    content: Text('No internet connection, unable to delete appointment.'),
+    backgroundColor: Colors.red,
+    ),
+    );
+    return;
+    }
     if (appointmentDate == null || services.every((s) => !s['value'])) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -80,7 +91,16 @@ class _HomeScreenState extends State<Home> {
     );
   }
 
-  void deleteAppointment(int index) {
+  Future<void> deleteAppointment(int index)async {
+    if (!await checkInternetConnection()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No internet connection, unable to delete appointment.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
     setState(() {
       authManager.currentUser?.selectedServices.removeAt(index);
       storage.saveUser(authManager.currentUser!);
@@ -98,107 +118,109 @@ class _HomeScreenState extends State<Home> {
   Widget build(BuildContext context) {
     final userServices = authManager.currentUser?.selectedServices ?? [];
 
-    return Scaffold(
-      backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        title: const Text(
-          'Barbershop',
-          style: TextStyle(
-            color: Colors.blue,
-            fontSize: 30.0,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+    return NetworkAwareWidget(
+      child: Scaffold(
         backgroundColor: Colors.grey[100],
-        elevation: 0,
-      ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Select Services:',
-                style: TextStyle(
-                  color: Colors.blue,
-                  fontSize: 20.0,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              for (int i = 0; i < services.length; i++)
-                CheckboxListTile(
-                  title: Text(services[i]['label']),
-                  value: services[i]['value'],
-                  onChanged: (newValue) => updateServiceSelection(i, newValue),
-                  activeColor: Colors.blue,
-                ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () => pickDate(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10.0),
+        appBar: AppBar(
+          title: const Text(
+            'Barbershop',
+            style: TextStyle(
+              color: Colors.blue,
+              fontSize: 30.0,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          backgroundColor: Colors.grey[100],
+          elevation: 0,
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Select Services:',
+                  style: TextStyle(
+                    color: Colors.blue,
+                    fontSize: 20.0,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                child: Text(
-                  appointmentDate == null
-                      ? 'Pick Appointment Date'
-                      : DateFormat('dd-MM-yyyy').format(appointmentDate!),
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                ),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: bookAppointment,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10.0),
+                for (int i = 0; i < services.length; i++)
+                  CheckboxListTile(
+                    title: Text(services[i]['label']),
+                    value: services[i]['value'],
+                    onChanged: (newValue) => updateServiceSelection(i, newValue),
+                    activeColor: Colors.blue,
+                  ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () => pickDate(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10.0),
+                    ),
+                  ),
+                  child: Text(
+                    appointmentDate == null
+                        ? 'Pick Appointment Date'
+                        : DateFormat('dd-MM-yyyy').format(appointmentDate!),
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                   ),
                 ),
-                child: const Text(
-                  'Book Appointment',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: bookAppointment,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10.0),
+                    ),
+                  ),
+                  child: const Text(
+                    'Book Appointment',
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'Appointments:',
-                style: TextStyle(
-                  color: Colors.blue,
-                  fontSize: 24.0,
-                  fontWeight: FontWeight.bold,
+                const SizedBox(height: 20),
+                const Text(
+                  'Appointments:',
+                  style: TextStyle(
+                    color: Colors.blue,
+                    fontSize: 24.0,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 20),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: userServices.length,
-                  itemBuilder: (context, index) {
-                    final service = userServices[index];
-                    return Card(
-                      elevation: 3,
-                      child: ListTile(
-                        title: Text(
-                          '${DateFormat('dd-MM-yyyy').format(service.appointmentDate)}: ${service.services.join(', ')}',
-                          style: const TextStyle(
-                            color: Colors.blue,
-                            fontWeight: FontWeight.bold,
+                const SizedBox(height: 20),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: userServices.length,
+                    itemBuilder: (context, index) {
+                      final service = userServices[index];
+                      return Card(
+                        elevation: 3,
+                        child: ListTile(
+                          title: Text(
+                            '${DateFormat('dd-MM-yyyy').format(service.appointmentDate)}: ${service.services.join(', ')}',
+                            style: const TextStyle(
+                              color: Colors.blue,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.red),
+                            onPressed: () => deleteAppointment(index),
                           ),
                         ),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () => deleteAppointment(index),
-                        ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

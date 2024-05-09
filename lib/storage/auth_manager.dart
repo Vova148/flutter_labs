@@ -7,11 +7,11 @@ class AuthManager {
 
   AuthManager(this._storage);
 
-  /// Реєстрація користувача та перевірка унікальності email
+
   Future<bool> register(User user) async {
     User? existingUser = await _storage.getUser(user.email);
     if (existingUser != null) {
-      return false; // Email вже зареєстровано
+      return false;
     }
     await _storage.saveUser(user);
     return true;
@@ -31,6 +31,7 @@ class AuthManager {
 
   void logout() {
     _currentUser = null;
+    _storage.clearCurrentUser();
   }
 
   /// Перевірка, чи є користувач авторизованим

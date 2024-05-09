@@ -7,12 +7,13 @@ import 'i_user_storage.dart';
 
 class SecureUserStorage implements IUserStorage {
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
-
+  static const String _currentUserKey = 'currentUser';
 
   String _getKey(String email) => 'user_$email';
 
   @override
   Future<void> saveUser(User user) async {
+
     String key = _getKey(user.email);
     String value = jsonEncode(user.toMap());
     await _storage.write(key: key, value: value);
@@ -35,6 +36,9 @@ class SecureUserStorage implements IUserStorage {
   Future<void> clearUser(String email) async {
     String key = _getKey(email);
     await _storage.delete(key: key);
+    if (email == await _storage.read(key: _currentUserKey)) {
+      await _storage.delete(key: _currentUserKey);
+    }
   }
 
   @override
@@ -48,5 +52,23 @@ class SecureUserStorage implements IUserStorage {
       }
     }
     return users;
+  }
+
+  Future<void> saveCurrentUser(String email) async {
+    await _storage.write(key: _currentUserKey, value: email);
+  }
+
+  // Clear the current user's information
+  Future<void> clearCurrentUser() async {
+    await _storage.delete(key: _currentUserKey);
+  }
+
+  // Retrieve the current user automatically on app start
+  Future<User?> getCurrentUser() async {
+    String? email = await _storage.read(key: _currentUserKey);
+    if (email != null) {
+      return await getUser(email);
+    }
+    return null;
   }
 }
