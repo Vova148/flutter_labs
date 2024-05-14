@@ -8,10 +8,12 @@ import 'internet_status_banner.dart';
 import 'models/user.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -25,6 +27,8 @@ class MyApp extends StatelessWidget {
 }
 
 class Reg extends StatefulWidget {
+  const Reg({super.key});
+
   @override
   _RegState createState() => _RegState();
 }

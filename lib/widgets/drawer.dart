@@ -116,6 +116,15 @@ class DrawerMainState extends State<DrawerMain> {
               Navigator.pushNamed(context, '/home');
             },
           ),
+          ListTile(
+            selected: widget.selected == 'flashlight',
+            leading: const Icon(Icons.flashlight_on, color: Colors.blue),
+            title: const Text('Ліхтарик', style: TextStyle(color: Colors.blue)),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.pushNamed(context, '/flashlight');
+            },
+          ),
           if (!_isAuthenticated)
             ListTile(
               selected: widget.selected == 'login',
