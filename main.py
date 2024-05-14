@@ -1,12 +1,13 @@
 from datetime import datetime
 from typing import List, Dict, Any
+
+import uvicorn
 from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel
 from sqlalchemy import create_engine, Column, String, DateTime, Integer, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, Session
 import json
-
 
 Base = declarative_base()
 
@@ -85,15 +86,44 @@ def get_db():
     finally:
         db.close()
 
+
 @app.post("/users/")
-def create_user(user: UserCreate, db: Session = Depends(get_db)):
-    db_user = User(firstName=user.firstName, lastName=user.lastName, email=user.email, password=user.password)
-    db.add(db_user)
+def save_user(user: UserCreate, db: Session = Depends(get_db)):
+    existing_user = db.query(User).filter(User.email == user.email).first()
+
+    if existing_user:
+        # Оновлення існуючих даних користувача
+        existing_user.firstName = user.firstName
+        existing_user.lastName = user.lastName
+        existing_user.password = user.password
+
+        # Видалення старих записів про послуги користувача
+        db.query(ServiceBar).filter(ServiceBar.userEmail == user.email).delete()
+    else:
+        # Створення нового користувача
+        existing_user = User(
+            firstName=user.firstName,
+            lastName=user.lastName,
+            email=user.email,
+            password=user.password,
+        )
+        db.add(existing_user)
+
+    # Додавання нових записів про послуги користувача
     for service in user.selectedServices:
-        db_service = ServiceBar(userEmail=user.email, services=json.dumps(service.services), appointmentDate=service.appointmentDate)
+        # Парсинг дати в форматі ISO 8601 із мілісекундами
+        appointment_date = datetime.strptime(service.get('appointmentDate'), '%Y-%m-%dT%H:%M:%S.%f')
+
+        db_service = ServiceBar(
+            userEmail=user.email,
+            services=json.dumps(service['services']),
+            appointmentDate=appointment_date,
+        )
         db.add(db_service)
+
     db.commit()
-    return {"message": "User created successfully"}
+    return {"message": "User saved successfully"}
+
 
 @app.get("/users/{email}")
 def get_user_by_email(email: str, db: Session = Depends(get_db)):
@@ -101,12 +131,14 @@ def get_user_by_email(email: str, db: Session = Depends(get_db)):
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
     services = db.query(ServiceBar).filter(ServiceBar.userEmail == email).all()
-    selected_services = [{"id": s.id, "services": json.loads(s.services), "appointmentDate": s.appointmentDate.isoformat()} for s in services]
+    selected_services = [{"userEmail":s.userEmail, "id": s.id, "services": s.services, "appointmentDate": s.appointmentDate.isoformat()} for s in services]
     return {
+        "id": user.id,
         "firstName": user.firstName,
         "lastName": user.lastName,
+        "password": user.password,
         "email": user.email,
-        "selectedServices": selected_services
+        "selectedServices": services
     }
 
 @app.post("/servicebars/")
@@ -116,3 +148,35 @@ def create_service_bar(servicebar: ServiceBarCreate, db: Session = Depends(get_d
     db.add(db_servicebar)
     db.commit()
     return {"message": "ServiceBar created successfully"}
+
+
+@app.get("/users/{email}/services/")
+def get_selected_services(email: str, db: Session = Depends(get_db)):
+    # Перевірка, чи існує користувач
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Отримання всіх сервісів, пов'язаних з цим користувачем
+    services = db.query(ServiceBar).filter(ServiceBar.userEmail == email).all()
+
+    return services
+
+
+@app.post("/servicebars/")
+def create_service_bar(servicebar: ServiceBarCreate, db: Session = Depends(get_db)):
+    services_json = json.dumps(servicebar.services)
+    db_servicebar = ServiceBar(userEmail=servicebar.userEmail, services=services_json, appointmentDate=servicebar.appointmentDate)
+    db.add(db_servicebar)
+    db.commit()
+    return {"message": "ServiceBar created successfully"}
+
+@app.delete("/servicebars/{service_id}")
+def delete_service_bar(service_id: int, db: Session = Depends(get_db)):
+    service = db.query(ServiceBar).filter(ServiceBar.id == service_id).first()
+    if not service:
+        raise HTTPException(status_code=404, detail="Service not found")
+    db.delete(service)
+    db.commit()
+    return {"message": "ServiceBar deleted successfully"}
+uvicorn.run(app)
