@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:lab1sample2/widgets/custom_text.dart';
+import 'package:lab1sample2/widgets/custom_text_field.dart';
 import 'global.dart';
+import 'helpers/message.dart';
 import 'internet_status_banner.dart';
-import 'models/user.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -65,14 +67,7 @@ class _LoginState extends State<Login> {
       child: Scaffold(
         backgroundColor: Colors.blue[50],
         appBar: AppBar(
-          title: const Text(
-            'Barbershop Login',
-            style: TextStyle(
-              color: Colors.blue,
-              fontSize: 40.0,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          title: const CustomText(text: 'Barbershop Login'),
           backgroundColor: Colors.blue[50],
           elevation: 0,
         ),
@@ -88,33 +83,15 @@ class _LoginState extends State<Login> {
                   height: 100,
                 ),
                 const SizedBox(height: 20),
-                TextField(
+                CustomTextField(
                   controller: emailController,
-                  decoration: InputDecoration(
-                    labelText: 'Email',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                    ),
-                  ),
-                  style: const TextStyle(
-                    color: Colors.blue,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  labelText: 'Email',
                 ),
                 const SizedBox(height: 20),
-                TextField(
+                CustomTextField(
                   controller: passwordController,
+                  labelText: 'Password',
                   obscureText: true,
-                  decoration: InputDecoration(
-                    labelText: 'Password',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                    ),
-                  ),
-                  style: const TextStyle(
-                    color: Colors.blue,
-                    fontWeight: FontWeight.bold,
-                  ),
                 ),
                 const SizedBox(height: 20),
                 ElevatedButton(
@@ -132,20 +109,10 @@ class _LoginState extends State<Login> {
       
                     if (success) {
                       storage.saveCurrentUser(email);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Login successful!'),
-                          backgroundColor: Colors.green,
-                        ),
-                      );
+                      showSnackBar('Login successful!', Colors.green, context);
                       Navigator.pushReplacementNamed(context, '/home');
                     } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Login failed! Invalid email or password.'),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
+                      showSnackBar('Login failed! Invalid email or password.', Colors.red, context);
                     }
                   },
                   style: ElevatedButton.styleFrom(

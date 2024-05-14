@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lab1sample2/utils.dart';
+import 'package:lab1sample2/widgets/custom_button.dart';
+import 'package:lab1sample2/widgets/custom_text.dart';
+import 'package:lab1sample2/widgets/user_service_list.dart';
 import 'global.dart';
+import 'helpers/data_picker.dart';
+import 'helpers/message.dart';
 import 'internet_status_banner.dart';
 import 'models/service.dart';
 
@@ -13,14 +18,16 @@ class Home extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<Home> {
-  List<Map<String, dynamic>> services = [
-    {'label': 'Haircuts', 'value': false},
-    {'label': 'Shaving', 'value': false},
-    {'label': 'Beard trimming', 'value': false},
-    {'label': 'Styling', 'value': false},
-  ];
+  List<Map<String, dynamic>> services = all_services;
 
   DateTime? appointmentDate;
+  Future<List<dynamic>>? userServicesFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    userServicesFuture = storage.getUserServices(authManager.currentUser?.email ?? '');
+  }
 
   void updateServiceSelection(int index, bool? newValue) {
     setState(() {
@@ -28,38 +35,16 @@ class _HomeScreenState extends State<Home> {
     });
   }
 
-  Future<void> pickDate(BuildContext context) async {
-    final DateTime? pickedDate = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime(DateTime.now().year + 1),
-    );
 
-    if (pickedDate != null && pickedDate != appointmentDate) {
-      setState(() {
-        appointmentDate = pickedDate;
-      });
-    }
+  void onDatePicked(DateTime pickedDate) {
+    setState(() {
+      appointmentDate = pickedDate;
+    });
   }
 
-  Future<void> bookAppointment()async {
-    if (!await checkInternetConnection()) {
-    ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(
-    content: Text('No internet connection, unable to delete appointment.'),
-    backgroundColor: Colors.red,
-    ),
-    );
-    return;
-    }
+  Future<void> bookAppointment() async {
     if (appointmentDate == null || services.every((s) => !s['value'])) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select services and a date.'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      showSnackBar('Please select services and a date.', Colors.red, context);
       return;
     }
 
@@ -73,63 +58,32 @@ class _HomeScreenState extends State<Home> {
       services: bookedServices,
       appointmentDate: appointmentDate!,
     );
-
+    await storage.createService(newService);
     setState(() {
-      authManager.currentUser?.selectedServices.add(newService);
-      storage.saveUser(authManager.currentUser!);
       appointmentDate = null;
       for (var service in services) {
         service['value'] = false;
       }
+      userServicesFuture = storage.getUserServices(authManager.currentUser?.email ?? '');
     });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Appointment booked successfully!'),
-        backgroundColor: Colors.green,
-      ),
-    );
+    showSnackBar('Appointment booked successfully!', Colors.green, context);
   }
 
-  Future<void> deleteAppointment(int index)async {
-    if (!await checkInternetConnection()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No internet connection, unable to delete appointment.'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-    setState(() {
-      authManager.currentUser?.selectedServices.removeAt(index);
-      storage.saveUser(authManager.currentUser!);
+  Future<void> deleteAppointment(int id) async {
+    await storage.deleteService(id);
+    setState(()  {
+      userServicesFuture = storage.getUserServices(authManager.currentUser?.email ?? '');
     });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Appointment deleted successfully!'),
-        backgroundColor: Colors.green,
-      ),
-    );
+    showSnackBar('Appointment deleted successfully!', Colors.green, context);
   }
 
   @override
   Widget build(BuildContext context) {
-    final userServices = authManager.currentUser?.selectedServices ?? [];
-
     return NetworkAwareWidget(
       child: Scaffold(
         backgroundColor: Colors.grey[100],
         appBar: AppBar(
-          title: const Text(
-            'Barbershop',
-            style: TextStyle(
-              color: Colors.blue,
-              fontSize: 30.0,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          title: const CustomText(text:"Barbershop"),
           backgroundColor: Colors.grey[100],
           elevation: 0,
         ),
@@ -140,14 +94,7 @@ class _HomeScreenState extends State<Home> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Select Services:',
-                  style: TextStyle(
-                    color: Colors.blue,
-                    fontSize: 20.0,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                const CustomText(text: 'Select Services:'),
                 for (int i = 0; i < services.length; i++)
                   CheckboxListTile(
                     title: Text(services[i]['label']),
@@ -157,7 +104,11 @@ class _HomeScreenState extends State<Home> {
                   ),
                 const SizedBox(height: 20),
                 ElevatedButton(
-                  onPressed: () => pickDate(context),
+                  onPressed: () => pickDate(
+                    context: context,
+                    onDatePicked: onDatePicked,
+                    initialDate: appointmentDate,
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue,
                     shape: RoundedRectangleBorder(
@@ -172,52 +123,16 @@ class _HomeScreenState extends State<Home> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                ElevatedButton(
+                CustomButton(
+                  text: 'Book Appointment',
                   onPressed: bookAppointment,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                    ),
-                  ),
-                  child: const Text(
-                    'Book Appointment',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                  ),
                 ),
                 const SizedBox(height: 20),
-                const Text(
-                  'Appointments:',
-                  style: TextStyle(
-                    color: Colors.blue,
-                    fontSize: 24.0,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                const CustomText(text: 'Appointments:',),
                 const SizedBox(height: 20),
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: userServices.length,
-                    itemBuilder: (context, index) {
-                      final service = userServices[index];
-                      return Card(
-                        elevation: 3,
-                        child: ListTile(
-                          title: Text(
-                            '${DateFormat('dd-MM-yyyy').format(service.appointmentDate)}: ${service.services.join(', ')}',
-                            style: const TextStyle(
-                              color: Colors.blue,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: () => deleteAppointment(index),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+                UserServicesList(
+                  userServicesFuture: userServicesFuture!,
+                  deleteAppointment: deleteAppointment,
                 ),
               ],
             ),
