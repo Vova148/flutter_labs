@@ -42,8 +42,5 @@ class AuthManager {
   /// Отримати поточного авторизованого користувача
   User? get currentUser => _currentUser;
 
-  /// Отримати всіх користувачів
-  Future<List<User>> getAllUsers() async {
-    return await _storage.getAllUsers();
-  }
+
 }

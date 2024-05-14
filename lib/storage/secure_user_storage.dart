@@ -41,18 +41,6 @@ class SecureUserStorage implements IUserStorage {
     }
   }
 
-  @override
-  Future<List<User>> getAllUsers() async {
-    List<User> users = [];
-    Map<String, String> allEntries = await _storage.readAll();
-    for (var entry in allEntries.entries) {
-      if (entry.key.startsWith('user_')) {
-        Map<String, dynamic> userMap = jsonDecode(entry.value);
-        users.add(User.fromMap(userMap));
-      }
-    }
-    return users;
-  }
 
   Future<void> saveCurrentUser(String email) async {
     await _storage.write(key: _currentUserKey, value: email);
@@ -71,4 +59,17 @@ class SecureUserStorage implements IUserStorage {
     }
     return null;
   }
+
+  @override
+  Future<List<dynamic>> getUserServices(String email) async {
+    String key = _getKey(email);
+    String? userData = await _storage.read(key: key);
+    if (userData != null) {
+      Map<String, dynamic> userMap = jsonDecode(userData);
+      List<dynamic> selectedServices = userMap['selectedServices'] ?? [];
+      return selectedServices;
+    }
+    return [];
+  }
+
 }

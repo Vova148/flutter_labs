@@ -15,6 +15,7 @@ Future<void> main() async {
   if (curUser != null) {
     authManager.login(curUser.email, curUser.password);
   }
+
   runApp(const MyApp());
 }
 
