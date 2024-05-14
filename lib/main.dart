@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lab1sample2/widgets/drawer.dart';
 import 'cubits/auth_cubit.dart';
 import 'cubits/appointment_cubit.dart';
+import 'flashlight.dart';
 import 'home.dart';
 import 'login.dart';
 import 'prof.dart';
@@ -43,6 +44,7 @@ class MyApp extends StatelessWidget {
           '/profile': (context) => const Prof(),
           '/home': (context) => const Home(),
           '/login': (context) => const Login(),
+          '/flashlight': (context) => const FlashLight()
         },
       ),
     );
